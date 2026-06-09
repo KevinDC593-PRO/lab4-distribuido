@@ -1,0 +1,42 @@
+﻿from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+
+app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+class Tarea(BaseModel):
+    id: int = None
+    titulo: str
+    descripcion: str
+    completada: bool = False
+
+tareas = []
+
+@app.get("/tareas")
+def listar_tareas():
+    return tareas
+
+@app.post("/tareas")
+def crear_tarea(tarea: Tarea):
+    tarea.id = len(tareas) + 1
+    tareas.append(tarea)
+    return {"mensaje": "Tarea creada", "tarea": tarea}
+
+@app.delete("/tareas/{id}")
+def eliminar_tarea(id: int):
+    for i, t in enumerate(tareas):
+        if t.id == id:
+            del tareas[i]
+            return {"mensaje": "Eliminada"}
+    raise HTTPException(status_code=404, detail="No encontrada")
+
+@app.put("/tareas/{id}")
+def actualizar_tarea(id: int, nueva: Tarea):
+    for i, t in enumerate(tareas):
+        if t.id == id:
+            nueva.id = id
+            tareas[i] = nueva
+            return {"mensaje": "Actualizada", "tarea": nueva}
+    raise HTTPException(status_code=404, detail="No encontrada")
